@@ -1,5 +1,5 @@
 Memory = {
-    memory = string.rep(0, 1024)
+    memory = string.rep(string.byte(0), 1024)
 }
 
 ---@param addr integer
