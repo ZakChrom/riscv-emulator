@@ -3,9 +3,19 @@ Memory = {
 }
 
 ---@param addr integer
+---@param n_bytes integer?
 ---@return integer
-function Memory.read(addr)
-	return Memory.memory:byte(addr + 1, addr + 1)
+function Memory.read(addr, n_bytes)
+	if n_bytes == nil then
+		n_bytes = 1
+	end
+
+	local num = 0;
+	for i = 0, #n_bytes do
+		num = Memory.memory:byte(addr + 1 + i, addr + 1 + i) << i * 8
+	end
+
+	return num
 end
 
 ---@param addr integer
