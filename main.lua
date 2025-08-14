@@ -1,5 +1,6 @@
 require("src.helper")
 require("src.memory")
+require("src.registers")
 
 local pc = 0
 
