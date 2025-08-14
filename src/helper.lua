@@ -38,12 +38,32 @@ end
 
 function Num.multiply(a,b) -- returns the less significant part first.
 	-- here for precision concerns.
-	-- for now: bullshit method
-	-- TODO: method that doesn't lose precision.
-	local mult = a*b
 
-	local ret1 = math.floor(mult % (2^32))
-	local ret2 = math.floor(mult / (2^32))
+	-- turn it into a bunch of 16bit chunks
+	local al = a % (2^16)
+	local ah = math.floor(a / (2^16))
 
-	return ret1, ret2
+	local bl = b % (2^16)
+	local bh = math.floor(b / (2^16))
+
+	-- now: multiplication we do could only result in up to 32 bits, meaning it's safe to do
+
+	local p0 = al*bl
+	local p1 = al*bh
+	local p2 = ah*bl
+	local p3 = ah*bh
+
+	-- no, i don't understand it either: but i think it works (?)
+	local mid = p1+p2
+	local midl = mid % (2^16)
+	local midh = math.floor(mid / (2^16))
+
+	local shit = (p0 + midl * (2^16))
+
+	local lo = shit % (2^32)
+	local carry = math.floor(shit / (2^32))
+
+	local hi = (p3 + midh + carry) % (2^32)
+
+	return lo,hi
 end
