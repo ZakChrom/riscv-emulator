@@ -12,7 +12,7 @@ function Memory.read(addr, n_bytes)
 
 	local num = 0;
 	for i = 0, #n_bytes do
-		num = Memory.memory:byte(addr + 1 + i, addr + 1 + i) << i * 8
+		num = Num.lshift(Memory.memory:byte(addr + 1 + i, addr + 1 + i), i * 8)
 	end
 
 	return num
