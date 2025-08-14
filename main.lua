@@ -5,5 +5,5 @@ local pc = 0
 
 while true do
 	local inst = Memory.read(pc, 4)
-	pc = pc + 1
+	pc = pc + 4
 end
