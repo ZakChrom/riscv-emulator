@@ -117,3 +117,12 @@ function Num.multiply(a,b) -- returns the less significant part first.
 
 	return lo,hi
 end
+
+---@param a integer
+---@param bits integer
+function Num.sext(a, bits)
+	if Num.getBits(a, bits - 1, bits - 1) == 1 then
+		return a + Num.lshift(Num.rshift(2^32 - 1, bits), bits)
+	end
+	return a
+end

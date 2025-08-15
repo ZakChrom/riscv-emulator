@@ -20,10 +20,18 @@ end
 
 ---@param addr integer
 ---@param v integer
-function Memory.write(addr, v)
-	if v == 0 then
-		Memory.memory[addr] = nil
-	else
-		Memory.memory[addr] = v
+---@param n_bytes integer?
+function Memory.write(addr, v, n_bytes)
+	if n_bytes == nil then
+		n_bytes = 1
+	end
+
+	for i = 0, n_bytes-1 do
+		local real = Num.band(Num.rshift(v, i * 8), 255)
+		if real == 0 then
+			Memory.memory[addr + i] = nil
+		else
+			Memory.memory[addr + i] = real
+		end
 	end
 end

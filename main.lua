@@ -8,6 +8,12 @@ local function b_type_imm(inst)
 	return (Num.getBits(inst, 31, 31) << 12) + (Num.getBits(inst, 7, 7) << 11) + (Num.getBits(inst, 25, 30) << 5) + (Num.getBits(inst, 8, 11) << 1)
 end
 
+---@param inst integer
+---@return integer
+local function s_type_imm(inst)
+	return (Num.getBits(inst, 25, 31) << 5) + Num.getBits(inst, 7, 11)
+end
+
 local pc = 0
 
 while true do
@@ -107,10 +113,32 @@ while true do
 			local rd = Num.getBits(inst, 7, 11)
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rs1 = Num.getBits(inst, 15, 19)
+			local imm = Num.getBits(inst, 20, 31)
+			local addr = (rs1 + Num.sext(imm, 12)) % (2^32)
+			if funct3 == 0 then -- LB
+				Registers.write(rd, Num.sext(Memory.read(addr, 1), 8))
+			elseif funct3 == 1 then -- LH
+				Registers.write(rd, Num.sext(Memory.read(addr, 2), 16))
+			elseif funct3 == 2 then -- LW
+				Registers.write(rd, Memory.read(addr, 4))
+			elseif funct3 == 4 then -- LBU
+				Registers.write(rd, Memory.read(addr, 1))
+			elseif funct3 == 5 then -- LHU
+				Registers.write(rd, Memory.read(addr, 2))
+			end
 		elseif opcode == 35 then -- 0b0100011, STORE
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rs1 = Num.getBits(inst, 15, 19)
 			local rs2 = Num.getBits(inst, 20, 24)
+			local imm = s_type_imm(inst)
+			local addr = (rs1 + Num.sext(imm, 12)) % (2^32)
+			if funct3 == 0 then -- SB
+				Memory.write(addr, Registers.read(rs2), 1)
+			elseif funct3 == 1 then -- SH
+				Memory.write(addr, Registers.read(rs2), 2)
+			elseif funct3 == 2 then -- SW
+				Memory.write(addr, Registers.read(rs2), 4)
+			end
 		elseif opcode == 19 then -- 0b0010011, register-immediate stuff
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rd = Num.getBits(inst, 7, 11)
