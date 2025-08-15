@@ -12,6 +12,7 @@ local pc = 0
 
 while true do
 	local inst = Memory.read(pc, 4)
+	local pc_inc_amount = 4
 
 	if Num.getBits(inst, 0,1) == 3 then -- normal 32-bit instruction
 		local opcode = Num.getBits(inst, 0,6)
@@ -46,7 +47,7 @@ while true do
 
 			Registers.write(rd, pc + 4)
 
-			pc = pc + imm - 4 -- minus 4 because loop adds 4 lol
+			pc_inc_amount = imm
 		elseif opcode == 103 then -- 0b1100111, JALR
 			local rd = Num.getBits(inst, 7, 11)
 			local funct3 = Num.getBits(inst, 12, 14)
@@ -63,7 +64,7 @@ while true do
 			target = target - (target % 2) -- the spec tells me to clear this bit so i do (idk why honestly but apparently they wanted it to work that way)
 
 			Registers.write(rd, pc + 4)
-			pc = target - 4 -- the loop adds 4
+			pc_inc_amount = target
 		elseif opcode == 99 then -- 0b1100011, BRANCH
 			local funct3 = Num.getBits(inst, 12, 14)
 
@@ -75,30 +76,30 @@ while true do
 			local sb = Num.signed(b, 32)
 
 			local imm = b_type_imm(inst)
-			local new_pc = pc + Num.signed(imm, 12)
+			local inc = Num.signed(imm, 12)
 			if funct3 == 0 then -- BEQ
 				if a == b then
-					pc = new_pc
+					pc_inc_amount = inc
 				end
 			elseif funct3 == 1 then -- BNE
 				if a ~= b then
-					pc = new_pc
+					pc_inc_amount = inc
 				end
 			elseif funct3 == 4 then -- BLT
 				if sa < sb then
-					pc = new_pc
+					pc_inc_amount = inc
 				end
 			elseif funct3 == 5 then -- BGE
 				if sa > sb then
-					pc = new_pc
+					pc_inc_amount = inc
 				end
 			elseif funct3 == 6 then -- BLTU
 				if a < b then
-					pc = new_pc
+					pc_inc_amount = inc
 				end
 			elseif funct3 == 7 then -- BGEU
 				if a >= b then
-					pc = new_pc
+					pc_inc_amount = inc
 				end
 			end
 		elseif opcode == 3 then -- 0b0000011, LOAD
