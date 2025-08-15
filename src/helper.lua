@@ -10,8 +10,9 @@ function Num.isneg(a)
 	return a >= 2^31
 end
 
-function Num.sub(a,b) -- TODO: make sure this is really the best way to do this: it seems a bit fucked up to me
-	return Num.add(a, Num.negate(b))
+function Num.sub(a,b)
+	-- return Num.add(a, Num.negate(b))
+	return (a - b) % 2^32
 end
 
 function Num.negate(a) -- the number is stored as **unsigned** in lua.
