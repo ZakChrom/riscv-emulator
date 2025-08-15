@@ -79,7 +79,7 @@ while true do
 
 					local newhi = hi
 					if Num.isneg(rs1v) then -- shenanigans again
-						hi = hi - rs2v
+						newhi = newhi - rs2v
 					end
 
 					newhi = newhi % (2^ 32)
