@@ -26,8 +26,38 @@ while true do
 			Registers.write(rd, imm + pc)
 		elseif opcode == 111 then -- 0b1101111, JAL
 			local rd = Num.getBits(inst, 7, 11)
+
+			local imm20 = Num.getBits(inst, 31, 31)
+			local imm10_1 = Num.getBits(inst, 21, 30)
+			local imm11 = Num.getBits(inst, 20,20)
+			local imm19_12 = Num.getBits(inst, 12,19)
+
+			local imm = imm20 * 2^20 + imm19_12 * 2^12 + imm11 * 2^11 + imm10_1 * 2^1 -- i have no fucking clue if this works :thubm_pu:
+
+			if imm20 > 0 then -- sign bit fuck
+				imm = imm - 2^21
+			end
+
+			Registers.write(rd, pc + 4)
+
+			pc = pc + imm - 4 -- minus 4 because loop adds 4 lol
 		elseif opcode == 103 then -- 0b1100111, JALR
+			local rd = Num.getBits(inst, 7, 11)
 			local funct3 = Num.getBits(inst, 12, 14)
+			local rs1 = Num.getBits(inst, 15, 19)
+			local imm = Num.getBits(20, 31)
+
+			if Num.getBits(imm, 11, 11) == 1 then -- sign bit
+				imm = imm - 2^12
+			end
+
+			local base = Registers.read(rs1)
+			local target = base + imm
+
+			target = target - (target % 2) -- the spec tells me to clear this bit so i do (idk why honestly but apparently they wanted it to work that way)
+
+			Registers.write(rd, pc + 4)
+			pc = target - 4 -- the loop adds 4
 		elseif opcode == 99 then -- 0b1100011, BRANCH
 			local funct3 = Num.getBits(inst, 12, 14)
 
