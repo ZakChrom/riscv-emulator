@@ -41,6 +41,42 @@ function Num.lshift(a, amount)
 	return a % (2^32)
 end
 
+function Num.band(a,b)
+	local res = 0
+	for i = 0,31 do
+		local ba,bb = a%2,b%2
+		if ba == 1 and bb == 1 then
+			res = res + 2^i
+		end
+		a,b = math.floor(a/2),math.floor(b/2)
+	end
+	return res
+end
+
+function Num.bor(a,b)
+	local res = 0
+	for i = 0,31 do
+		local ba,bb = a%2,b%2
+		if ba == 1 or bb == 1 then
+			res = res + 2^i
+		end
+		a,b = math.floor(a/2),math.floor(b/2)
+	end
+	return res
+end
+
+function Num.bxor(a,b)
+	local res = 0
+	for i = 0,31 do
+		local ba,bb = a%2,b%2
+		if ba ~= bb then
+			res = res + 2^i
+		end
+		a,b = math.floor(a/2),math.floor(b/2)
+	end
+	return res
+end
+
 function Num.getBits(a, pos1, pos2) -- starts at 0. example: getBits(0b1010, 0, 1) == 0b10, getBits(0b1010, 1,2) == 0b01
 	a = Num.rshift(a, pos1)
 
