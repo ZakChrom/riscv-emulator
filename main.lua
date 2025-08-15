@@ -111,10 +111,55 @@ while true do
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rs1 = Num.getBits(inst, 15, 19)
 			local rs2 = Num.getBits(inst, 20, 24)
-		elseif opcode == 19 then -- 0b0010011, immediate register stuff
+		elseif opcode == 19 then -- 0b0010011, register-immediate stuff
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rd = Num.getBits(inst, 7, 11)
 			local rs1 = Num.getBits(inst, 15, 19)
+			local immediate = Num.getBits(20,31)
+
+			local a = Registers.read(rs1)
+			local sa = Num.signed(a, 32)
+
+			if Num.getBits(immediate, 11, 11) == 1 then -- oh fuck off sign bit
+				immediate = immediate + 4294965248
+			end
+
+			if funct3 == 0 then -- ADDI
+				Registers.write(rd, Num.add(Registers.read(rs1), immediate))
+			elseif funct3 == 2 then -- SLTI
+				Registers.write(rd, (sa < immediate) and 1 or 0)
+			elseif funct3 == 3 then -- SLTIU
+				Registers.write(rd, (a < immediate) and 1 or 0)
+			elseif funct3 == 4 then -- XORI
+				Registers.write(rd, Num.bxor(a, immediate))
+			elseif funct3 == 6 then -- ORI
+				Registers.write(rd, Num.bor(a, immediate))
+			elseif funct3 == 7 then -- ANDI
+				Registers.write(rd, Num.band(a, immediate))
+
+			elseif funct3 == 1 then -- SLLI
+				local shift_amount = Num.getBits(immediate, 0,4)
+
+				Registers.write(rd, Num.lshift(a, shift_amount))
+			elseif funct3 == 5 then -- SRLI/SRAI
+				local shift_amount = Num.getBits(immediate, 0,4)
+				if Num.getBits(inst, 30, 30) == 1 then -- SRAI
+					local is_signed = Num.isneg(a)
+
+					local newval = Num.rshift(a, shift_amount)
+
+					if is_signed then
+						local tval = 2^shift_amount - 1
+						tval = Num.lshift(tval, 32 - shift_amount)
+
+						newval = newval + tval
+					end
+
+					Registers.write(rd, newval)
+				else -- SRLI
+					Registers.write(rd, Num.rshift(a, shift_amount))
+				end
+			end
 		elseif opcode == 51 then -- 0b0110011, register register stuff (but also mul/div from `m`)
 			local rd = Num.getBits(inst, 7, 11)
 			local funct3 = Num.getBits(inst, 12, 14)
@@ -159,6 +204,7 @@ while true do
 					local lo,hi = Num.multiply(rs1v, rs2v)
 
 					Registers.write(rd, hi)
+				-- TODO: division & remainder
 				end
 			else
 				if funct3 == 0 then -- ADD/SUB
@@ -168,11 +214,42 @@ while true do
 						Registers.write(rd, Num.sub(Registers.read(rs1), Registers.read(rs2)))
 					end
 				elseif funct3 == 1 then -- SLL
-					if funct7 == 0 then
+					-- if funct7 == 0 then -- this if statement is probably never false so like who cares
 						Registers.write(rd, Num.lshift(Registers.read(rs1), Registers.read(rs2)))
+					-- end
+				elseif funct3 == 2 then -- SLT
+					local signeda = Num.signed(Registers.read(rs1), 32)
+					local signedb = Num.signed(Registers.read(rs2), 32)
+					Registers.write(rd, (signeda < signedb) and 1 or 0)
+				elseif funct3 == 3 then
+					Registers.write(rd, (Registers.read(rs1) < Registers.read(rs2)) and 1 or 0)
+				elseif funct3 == 4 then -- XOR
+					Registers.write(rd, Num.bxor(Registers.read(rs1), Registers.read(rs2)))
+				elseif funct3 == 5 then -- SRL, SRA
+					if Num.getBits(inst, 30, 30) == 1 then -- SRA
+						local a = Registers.read(rs1)
+						local b = Registers.read(rs2)
+						local is_signed = Num.isneg(a)
+
+						local newval = Num.rshift(a, b)
+
+						if is_signed then
+							local tval = 2^b - 1
+							tval = Num.lshift(tval, 32 - b)
+
+							newval = newval + tval
+						end
+
+						Registers.write(rd, newval)
+					else -- SRL
+						Registers.write(rd, Num.rshift(Registers.read(rs1), Registers.read(rs2)))
 					end
-				-- TODO: the rest
+				elseif funct3 == 6 then -- OR
+					Registers.write(rd, Num.bor(Registers.read(rs1), Registers.read(rs2)))
+				elseif funct3 == 7 then -- AND
+					Registers.write(rd, Num.band(Registers.read(rs1), Registers.read(rs2)))
 				end
+				-- TODO: the rest
 			end
 		elseif opcode == 15 then -- 0b0001111, fence.i
 		elseif opcode == 115 then -- 0b1110011 system (ecall, ebreak, Zicsr stuff)
