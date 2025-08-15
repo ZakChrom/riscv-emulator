@@ -54,7 +54,42 @@ while true do
 			local funct7 = Num.getBits(inst, 25, 31)
 
 			if (funct7 % 2) == 1 then
+				local rs1v, rs2v = Registers.read(rs1), Registers.read(rs2)
 				-- M extension
+				if funct3 == 0 then -- MUL: signed x signed lower bits
+					local lo,hi = Num.multiply(rs1v, rs2v)
+
+					Registers.write(rd, lo)
+				elseif funct3 == 1 then -- MULH: signed x signed upper bits
+					local lo,hi = Num.multiply(rs1v, rs2v)
+
+					local newhi = hi
+					if Num.isneg(rs1v) then -- shenanigans that i read about somewhere that may or may not work
+						newhi = newhi - rs2v
+					end
+					if Num.isneg(rs2v) then
+						newhi = newhi - rs1v
+					end
+
+					newhi = newhi % (2^ 32)
+
+					Registers.write(rd, newhi)
+				elseif funct3 == 2 then -- MULHSU: signed x unsigned upper bits
+					local lo,hi = Num.multiply(rs1v, rs2v)
+
+					local newhi = hi
+					if Num.isneg(rs1v) then -- shenanigans again
+						hi = hi - rs2v
+					end
+
+					newhi = newhi % (2^ 32)
+
+					Registers.write(rd, newhi)
+				elseif funct3 == 3 then -- MULHU: unsigned x unsigned upper bits
+					local lo,hi = Num.multiply(rs1v, rs2v)
+
+					Registers.write(rd, hi)
+				end
 			else
 				if funct3 == 0 then -- ADD/SUB
 					if funct7 == 0 then -- add

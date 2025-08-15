@@ -6,6 +6,10 @@ function Num.add(a,b)
 	return (a+b) % (2^32) -- limit to 32 bits
 end
 
+function Num.isneg(a)
+	return a >= 2^31
+end
+
 function Num.sub(a,b) -- TODO: make sure this is really the best way to do this: it seems a bit fucked up to me
 	return Num.add(a, Num.negate(b))
 end
@@ -18,7 +22,7 @@ function Num.signed(a)
 	assert(a < 2^32) -- idk just in case
 
 	if a >= 2^31 then
-		return (-(2^31)) + (a - (2^31))
+		return a - 2^32
 	end
 
 	return a;
@@ -62,16 +66,16 @@ function Num.multiply(a,b) -- returns the less significant part first.
 	local p3 = ah*bh
 
 	-- no, i don't understand it either: but i think it works (?)
-	local mid = p1+p2
-	local midl = mid % (2^16)
-	local midh = math.floor(mid / (2^16))
+	local mid = p1+p2 -- max 33 bits (i think)
+	local midl = mid % (2^16) -- lower 32 bits
+	local midh = math.floor(mid / (2^16)) -- 1 upper bit (lol)
 
-	local shit = (p0 + midl * (2^16))
+	local shit = (p0 + midl * (2^16)) -- 32 bits + 32 bits = max 33 bits
 
-	local lo = shit % (2^32)
-	local carry = math.floor(shit / (2^32))
+	local lo = shit % (2^32) -- get rid of the 33rd bit
+	local carry = math.floor(shit / (2^32)) -- the 33rd bit
 
-	local hi = (p3 + midh + carry) % (2^32)
+	local hi = (p3 + midh + carry) % (2^32) -- 32 bits + 1 bit + 1 bit: max 33 bits
 
 	return lo,hi
 end
