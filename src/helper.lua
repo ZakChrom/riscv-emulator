@@ -6,6 +6,14 @@ function Num.add(a,b)
 	return (a+b) % (2^32) -- limit to 32 bits
 end
 
+function Num.sub(a,b) -- TODO: make sure this is really the best way to do this: it seems a bit fucked up to me
+	return Num.add(a, Num.negate(b))
+end
+
+function Num.negate(a) -- the number is stored as **unsigned** in lua.
+	return (2^32 - a) % (2^32)
+end
+
 function Num.signed(a)
 	assert(a < 2^32) -- idk just in case
 

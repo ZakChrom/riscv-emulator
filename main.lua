@@ -13,9 +13,17 @@ while true do
 		if opcode == 55 then -- 0b0110111, LUI
 			local rd = Num.getBits(inst, 7, 11)
 			local imm = Num.getBits(inst, 12, 31)
+
+			imm = Num.lshift(imm, 12) -- fill lowest 12 bits with zeroes
+
+			Registers.write(rd, imm)
 		elseif opcode == 23 then -- 0010111, AUIPC
 			local rd = Num.getBits(inst, 7, 11)
 			local imm = Num.getBits(inst, 12, 31)
+
+			imm = Num.lshift(imm, 12)
+
+			Registers.write(rd, imm + pc)
 		elseif opcode == 111 then -- 0b1101111, JAL
 			local rd = Num.getBits(inst, 7, 11)
 		elseif opcode == 103 then -- 0b1100111, JALR
@@ -44,6 +52,23 @@ while true do
 			local rs2 = Num.getBits(inst, 20, 24)
 
 			local funct7 = Num.getBits(inst, 25, 31)
+
+			if (funct7 % 2) == 1 then
+				-- M extension
+			else
+				if funct3 == 0 then -- ADD/SUB
+					if funct7 == 0 then -- add
+						Registers.write(rd, Num.add(Registers.read(rs1), Registers.read(rs2)))
+					elseif funct7 == 32 then -- 0b0100000 sub
+						Registers.write(rd, Num.sub(Registers.read(rs1), Registers.read(rs2)))
+					end
+				elseif funct3 == 1 then -- SLL
+					if funct7 == 0 then
+						Registers.write(rd, Num.lshift(Registers.read(rs1), Registers.read(rs2)))
+					end
+				-- TODO: the rest
+				end
+			end
 		elseif opcode == 15 then -- 0b0001111, fence.i
 		elseif opcode == 115 then -- 0b1110011 system (ecall, ebreak, Zicsr stuff)
 			local funct3 = Num.getBits(inst, 12, 14)
