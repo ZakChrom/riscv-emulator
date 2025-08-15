@@ -64,7 +64,8 @@ while true do
 			target = target - (target % 2) -- the spec tells me to clear this bit so i do (idk why honestly but apparently they wanted it to work that way)
 
 			Registers.write(rd, pc + 4)
-			pc_inc_amount = target
+			pc = target
+			pc_inc_amount = 0
 		elseif opcode == 99 then -- 0b1100011, BRANCH
 			local funct3 = Num.getBits(inst, 12, 14)
 
