@@ -19,11 +19,12 @@ function Num.negate(a) -- the number is stored as **unsigned** in lua.
 	return (2^32 - a) % (2^32)
 end
 
-function Num.signed(a)
-	assert(a < 2^32) -- idk just in case
-
-	if a >= 2^31 then
-		return a - 2^32
+---@param a integer
+---@param bits integer
+---@return integer
+function Num.signed(a, bits)
+	if a >= 2^(bits - 1) then
+		return a - 2^bits
 	end
 
 	return a;

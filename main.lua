@@ -2,6 +2,12 @@ require("src.helper")
 require("src.memory")
 require("src.registers")
 
+---@param inst integer
+---@return integer
+local function b_type_imm(inst)
+	return (Num.getBits(inst, 31, 31) << 12) + (Num.getBits(inst, 7, 7) << 11) + (Num.getBits(inst, 25, 30) << 5) + (Num.getBits(inst, 8, 11) << 1)
+end
+
 local pc = 0
 
 while true do
@@ -63,6 +69,38 @@ while true do
 
 			local rs1 = Num.getBits(inst, 15, 19)
 			local rs2 = Num.getBits(inst, 20, 24)
+			local a = Registers.read(rs1)
+			local b = Registers.read(rs2)
+			local sa = Num.signed(a, 32)
+			local sb = Num.signed(b, 32)
+
+			local imm = b_type_imm(inst)
+			local new_pc = pc + Num.signed(imm, 12)
+			if funct3 == 0 then -- BEQ
+				if a == b then
+					pc = new_pc
+				end
+			elseif funct3 == 1 then -- BNE
+				if a ~= b then
+					pc = new_pc
+				end
+			elseif funct3 == 4 then -- BLT
+				if sa < sb then
+					pc = new_pc
+				end
+			elseif funct3 == 5 then -- BGE
+				if sa > sb then
+					pc = new_pc
+				end
+			elseif funct3 == 6 then -- BLTU
+				if a < b then
+					pc = new_pc
+				end
+			elseif funct3 == 7 then -- BGEU
+				if a >= b then
+					pc = new_pc
+				end
+			end
 		elseif opcode == 3 then -- 0b0000011, LOAD
 			local rd = Num.getBits(inst, 7, 11)
 			local funct3 = Num.getBits(inst, 12, 14)
@@ -153,5 +191,5 @@ while true do
 		-- raise illegal instruction... or handle c extension if we do that... or other stuff
 	end
 
-	pc = pc + 4
+	pc = pc + pc_inc_amount
 end
