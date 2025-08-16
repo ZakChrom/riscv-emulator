@@ -349,7 +349,6 @@ while true do
 				elseif funct3 == 7 then -- AND
 					Registers.write(rd, Num.band(Registers.read(rs1), Registers.read(rs2)))
 				end
-				-- TODO: the rest
 			end
 		elseif opcode == 15 then -- 0b0001111, fence.i
 		elseif opcode == 115 then -- 0b1110011 system (ecall, ebreak, Zicsr stuff)
