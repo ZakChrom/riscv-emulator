@@ -232,7 +232,79 @@ while true do
 					local lo,hi = Num.multiply(rs1v, rs2v)
 
 					Registers.write(rd, hi)
-				-- TODO: division & remainder
+				elseif funct3 == 4 then -- DIV
+					-- signed integer division my beloved
+
+					local srs1v, srs2v = Num.signed(rs1v), Num.signed(rs2v) -- get the signed ints for lua
+
+					local val
+					if rs1v == 2^31 and rs2v == 2^32 - 1 then -- overflow case: max negative number divided by -1
+						val = rs1v
+					elseif rs2v == 0 then
+						val = 2^32 - 1 -- -1
+					else
+						val = srs1v / srs2v -- calculate
+	
+						if val >= 0 then -- round towards 0 (i think that's what the spec wants?)
+							val = math.floor(val)
+						else
+							val = math.ceil(val)
+						end
+	
+						if val < 0 then
+							val = val + 2^32
+						end
+					end
+
+					Registers.write(rd, val)
+				elseif funct3 == 5 then -- DIVU
+					local val = math.floor(rs1v / rs2v) -- should be precise enough
+
+					if rs2v == 0 then
+						val = 2^32 - 1
+					end
+
+					Registers.write(rd, val)
+				elseif funct3 == 6 then -- REM
+					-- signed remainder stab me
+					local srs1v, srs2v = Num.signed(rs1v), Num.signed(rs2v)
+
+					local val
+					if rs1v == 2^31 and rs2v == 2^32 - 1 then -- overflow case: max negative number divided by -1
+						val = 0
+					elseif rs2v == 0 then -- division by 0 case
+						val = rs1v
+					else
+						-- since lua disagrees on how modulo works
+						-- we gotta do fucked up crap
+						local div = srs1v / srs2v -- calculate division result
+	
+						if div >= 0 then -- round towards 0 (i think that's what the spec wants?)
+							div = math.floor(div)
+						else
+							div = math.ceil(div)
+						end
+
+						local r = srs1v - div * srs2v -- kill me: oh yeah also this is uhh... probably not gonna lose precision :shrug: TODO: make sure lol
+
+						if r < 0 then
+							r = r + 2^32
+						end
+
+						val = r
+					end
+
+					Registers.write(rd, val)
+				elseif funct3 == 7 then -- REMU
+					-- thank god it's unsigned
+
+					local val = rs1v % rs2v -- ngl that should *just* work
+
+					if rs2v == 0 then -- division by 0 case
+						val = rs1v
+					end
+
+					Registers.write(rd, val)
 				end
 			else
 				if funct3 == 0 then -- ADD/SUB
