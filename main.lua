@@ -350,7 +350,7 @@ while true do
 					Registers.write(rd, Num.band(Registers.read(rs1), Registers.read(rs2)))
 				end
 			end
-		elseif opcode == 15 then -- 0b0001111, fence.i
+		elseif opcode == 15 then -- 0b0001111, fence
 		elseif opcode == 115 then -- 0b1110011 system (ecall, ebreak, Zicsr stuff)
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rd = Num.getBits(inst, 7, 11)
