@@ -27,7 +27,7 @@ function Memory.write(addr, v, n_bytes)
 	end
 
 	for i = 0, n_bytes-1 do
-		local real = Num.rshift(v, i * 8) % 255
+		local real = Num.rshift(v, i * 8) % 256
 		if real == 0 then
 			Memory.memory[addr + i] = nil
 		else
