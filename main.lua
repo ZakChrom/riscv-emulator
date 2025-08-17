@@ -114,7 +114,7 @@ while true do
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rs1 = Num.getBits(inst, 15, 19)
 			local imm = Num.getBits(inst, 20, 31)
-			local addr = (rs1 + Num.sext(imm, 12)) % (2^32)
+			local addr = (Registers.read(rs1) + Num.sext(imm, 12)) % (2^32)
 			if funct3 == 0 then -- LB
 				Registers.write(rd, Num.sext(Memory.read(addr, 1), 8))
 			elseif funct3 == 1 then -- LH
