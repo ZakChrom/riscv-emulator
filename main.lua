@@ -355,6 +355,15 @@ while true do
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rd = Num.getBits(inst, 7, 11)
 			local rs1 = Num.getBits(inst, 15, 19)
+			local funct12 = Num.getBits(inst, 20, 31)
+
+			if funct3 == 0 then -- ECALL, EBREAK
+				if funct12 == 0 then -- ECALL
+
+				elseif funct12 == 1 then -- EBREAK
+
+				end
+			end
 		elseif opcode == 47 then -- 0b0101111, AMO
 			local rd = Num.getBits(inst, 7, 11)
 			local rs1 = Num.getBits(inst, 15, 19)
