@@ -364,6 +364,107 @@ while true do
 
 			local rl = Num.getBits(25,25)
 			local aq = Num.getBits(26,26)
+
+			if funct5 == 2 then -- LR.W
+				local data = Memory.read(Registers.read(rs1), 4)
+
+				Registers.write(rd, data)
+			elseif funct5 == 3 then -- SC.W
+				local addr = Registers.read(rs1)
+				local data = Registers.read(rs2)
+
+				Memory.write(addr, data, 4)
+
+				Registers.write(rd, 0)
+			elseif funct5 == 1 then -- AMOSWAP.W
+				local addr = Registers.read(rs1)
+				local data = Memory.read(addr, 4)
+				local rs2v = Registers.read(rs2)
+
+				Memory.write(addr, rs2v, 4)
+
+				Registers.write(rd, data)
+			elseif funct5 == 0 then -- AMOADD.W
+				local addr = Registers.read(rs1)
+				local data = Memory.read(addr, 4)
+				local rs2v = Registers.read(rs2)
+
+				Memory.write(addr, Num.add(data, rs2v), 4)
+
+				Registers.write(rd, data)
+			elseif funct5 == 4 then -- AMOXOR.W
+				local addr = Registers.read(rs1)
+				local data = Memory.read(addr, 4)
+				local rs2v = Registers.read(rs2)
+
+				Memory.write(addr, Num.bxor(data, rs2v), 4)
+
+				Registers.write(rd, data)
+			elseif funct5 == 12 then -- AMOAND.W
+				local addr = Registers.read(rs1)
+				local data = Memory.read(addr, 4)
+				local rs2v = Registers.read(rs2)
+
+				Memory.write(addr, Num.band(data, rs2v), 4)
+
+				Registers.write(rd, data)
+			elseif funct5 == 8 then -- AMOOR.W
+				local addr = Registers.read(rs1)
+				local data = Memory.read(addr, 4)
+				local rs2v = Registers.read(rs2)
+
+				Memory.write(addr, Num.bor(data, rs2v), 4)
+
+				Registers.write(rd, data)
+			elseif funct5 == 16 then -- AMOMIN.W
+				local addr = Registers.read(rs1)
+				local data = Memory.read(addr, 4)
+				local rs2v = Registers.read(rs2)
+
+				if Num.signed(data) < Num.signed(rs2v) then
+					Memory.write(addr, data, 4)
+				else
+					Memory.write(addr, rs2v, 4)
+				end
+
+				Registers.write(rd, data)
+			elseif funct5 == 20 then -- AMOMAX.W
+				local addr = Registers.read(rs1)
+				local data = Memory.read(addr, 4)
+				local rs2v = Registers.read(rs2)
+
+				if Num.signed(data) > Num.signed(rs2v) then
+					Memory.write(addr, data, 4)
+				else
+					Memory.write(addr, rs2v, 4)
+				end
+
+				Registers.write(rd, data)
+			elseif funct5 == 24 then -- AMOMINU.W
+				local addr = Registers.read(rs1)
+				local data = Memory.read(addr, 4)
+				local rs2v = Registers.read(rs2)
+
+				if data < rs2v then
+					Memory.write(addr, data, 4)
+				else
+					Memory.write(addr, rs2v, 4)
+				end
+
+				Registers.write(rd, data)
+			elseif funct5 == 28 then -- AMOMAXU.W
+				local addr = Registers.read(rs1)
+				local data = Memory.read(addr, 4)
+				local rs2v = Registers.read(rs2)
+
+				if data > rs2v then
+					Memory.write(addr, data, 4)
+				else
+					Memory.write(addr, rs2v, 4)
+				end
+
+				Registers.write(rd, data)
+			end
 		end
 	else
 		-- raise illegal instruction... or handle c extension if we do that... or other stuff
