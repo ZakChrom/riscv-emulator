@@ -144,18 +144,20 @@ while true do
 			local rd = Num.getBits(inst, 7, 11)
 			local rs1 = Num.getBits(inst, 15, 19)
 			local immediate = Num.getBits(inst, 20,31)
+			local simmediate = immediate
 
 			local a = Registers.read(rs1)
 			local sa = Num.signed(a, 32)
 
 			if Num.getBits(immediate, 11, 11) == 1 then -- oh fuck off sign bit
-				immediate = immediate + 4294965248
+				immediate = immediate + 4294963200
+				simmediate = simmediate - 2^12
 			end
 
 			if funct3 == 0 then -- ADDI
 				Registers.write(rd, Num.add(Registers.read(rs1), immediate))
 			elseif funct3 == 2 then -- SLTI
-				Registers.write(rd, (sa < immediate) and 1 or 0)
+				Registers.write(rd, (sa < simmediate) and 1 or 0)
 			elseif funct3 == 3 then -- SLTIU
 				Registers.write(rd, (a < immediate) and 1 or 0)
 			elseif funct3 == 4 then -- XORI
