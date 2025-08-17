@@ -58,7 +58,7 @@ while true do
 			local rd = Num.getBits(inst, 7, 11)
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rs1 = Num.getBits(inst, 15, 19)
-			local imm = Num.getBits(20, 31)
+			local imm = Num.getBits(inst, 20, 31)
 
 			if Num.getBits(imm, 11, 11) == 1 then -- sign bit
 				imm = imm - 2^12
@@ -143,7 +143,7 @@ while true do
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rd = Num.getBits(inst, 7, 11)
 			local rs1 = Num.getBits(inst, 15, 19)
-			local immediate = Num.getBits(20,31)
+			local immediate = Num.getBits(inst, 20,31)
 
 			local a = Registers.read(rs1)
 			local sa = Num.signed(a, 32)
@@ -235,7 +235,7 @@ while true do
 				elseif funct3 == 4 then -- DIV
 					-- signed integer division my beloved
 
-					local srs1v, srs2v = Num.signed(rs1v), Num.signed(rs2v) -- get the signed ints for lua
+					local srs1v, srs2v = Num.signed(rs1v, 32), Num.signed(rs2v, 32) -- get the signed ints for lua
 
 					local val
 					if rs1v == 2^31 and rs2v == 2^32 - 1 then -- overflow case: max negative number divided by -1
@@ -267,7 +267,7 @@ while true do
 					Registers.write(rd, val)
 				elseif funct3 == 6 then -- REM
 					-- signed remainder stab me
-					local srs1v, srs2v = Num.signed(rs1v), Num.signed(rs2v)
+					local srs1v, srs2v = Num.signed(rs1v, 32), Num.signed(rs2v, 32)
 
 					local val
 					if rs1v == 2^31 and rs2v == 2^32 - 1 then -- overflow case: max negative number divided by -1
@@ -371,8 +371,8 @@ while true do
 			local funct3 = Num.getBits(inst, 12, 14)
 			local funct5 = Num.getBits(inst, 27, 31)
 
-			local rl = Num.getBits(25,25)
-			local aq = Num.getBits(26,26)
+			local rl = Num.getBits(inst, 25,25)
+			local aq = Num.getBits(inst, 26,26)
 
 			if funct5 == 2 then -- LR.W
 				local data = Memory.read(Registers.read(rs1), 4)
@@ -430,7 +430,7 @@ while true do
 				local data = Memory.read(addr, 4)
 				local rs2v = Registers.read(rs2)
 
-				if Num.signed(data) < Num.signed(rs2v) then
+				if Num.signed(data, 32) < Num.signed(rs2v, 32) then
 					Memory.write(addr, data, 4)
 				else
 					Memory.write(addr, rs2v, 4)
@@ -442,7 +442,7 @@ while true do
 				local data = Memory.read(addr, 4)
 				local rs2v = Registers.read(rs2)
 
-				if Num.signed(data) > Num.signed(rs2v) then
+				if Num.signed(data, 32) > Num.signed(rs2v, 32) then
 					Memory.write(addr, data, 4)
 				else
 					Memory.write(addr, rs2v, 4)
