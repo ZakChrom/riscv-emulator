@@ -482,17 +482,5 @@ while true do
 		-- raise illegal instruction... or handle c extension if we do that... or other stuff
 	end
 
-
-	for i = 1, 32 do
-		local v = Registers.read(i - 1)
-		if v ~= 0 then
-			io.stdout:write(tostring(i - 1) .. ": " .. tostring(v) .. " / ")
-		end
-	end
-	print()
-	for i = 1, 2^26 do
-		
-	end
-
 	pc = pc + pc_inc_amount
 end
