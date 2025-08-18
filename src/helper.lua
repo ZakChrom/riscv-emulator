@@ -77,6 +77,18 @@ function Num.bxor(a,b)
 	return res
 end
 
+function Num.clear(a,b) -- any bit set in b will be removed from a
+	local res = 0
+	for i = 0,31 do
+		local ba,bb = a%2,b%2
+		if ba == 1 and bb == 0 then
+			res = res + 2^i
+		end
+		a,b = math.floor(a/2),math.floor(b/2)
+	end
+	return res
+end
+
 function Num.getBits(a, pos1, pos2) -- starts at 0. example: getBits(0b1010, 0, 1) == 0b10, getBits(0b1010, 1,2) == 0b01
 	a = Num.rshift(a, pos1)
 

@@ -366,6 +366,40 @@ while true do
 				elseif funct12 == 1 then -- EBREAK
 
 				end
+			elseif funct3 == 1 then -- CSRRW
+				if rd ~= 0 then
+					local ocsr = CSRs.read(funct12)
+					Registers.write(rd, ocsr)
+				end
+				local newval = Registers.read(rs1)
+				CSRs.write(funct12, newval)
+			elseif funct3 == 2 then -- CSRRS
+				local ocsr = CSRs.read(funct12)
+				Registers.write(rd, ocsr)
+				local modval = Registers.read(rs1)
+				CSRs.write(funct12, Num.bor(ocsr, modval))
+			elseif funct3 == 3 then -- CSRRC
+				local ocsr = CSRs.read(funct12)
+				Registers.write(rd, ocsr)
+				local modval = Registers.read(rs1)
+				CSRs.write(funct12, Num.clear(ocsr, modval))
+			elseif funct3 == 5 then -- CSRRWI
+				local imm = rs1
+				if rd ~= 0 then
+					local ocsr = CSRs.read(funct12)
+					Registers.write(rd, ocsr)
+				end
+				CSRs.write(funct12, imm)
+			elseif funct3 == 6 then -- CSRRSI
+				local imm = rs1
+				local ocsr = CSRs.read(funct12)
+				Registers.write(rd, ocsr)
+				CSRs.write(funct12, Num.bor(ocsr, imm))
+			elseif funct3 == 7 then -- CSRRCI
+				local imm = rs1
+				local ocsr = CSRs.read(funct12)
+				Registers.write(rd, ocsr)
+				CSRs.write(funct12, Num.clear(ocsr, imm))
 			end
 		elseif opcode == 47 then -- 0b0101111, AMO
 			local rd = Num.getBits(inst, 7, 11)
