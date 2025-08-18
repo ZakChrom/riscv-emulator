@@ -376,13 +376,17 @@ while true do
 			elseif funct3 == 2 then -- CSRRS
 				local ocsr = CSRs.read(funct12)
 				Registers.write(rd, ocsr)
-				local modval = Registers.read(rs1)
-				CSRs.write(funct12, Num.bor(ocsr, modval))
+				if rs1 ~= 0 then
+					local modval = Registers.read(rs1)
+					CSRs.write(funct12, Num.bor(ocsr, modval))
+				end
 			elseif funct3 == 3 then -- CSRRC
 				local ocsr = CSRs.read(funct12)
 				Registers.write(rd, ocsr)
-				local modval = Registers.read(rs1)
-				CSRs.write(funct12, Num.clear(ocsr, modval))
+				if rs1 ~= 0 then
+					local modval = Registers.read(rs1)
+					CSRs.write(funct12, Num.clear(ocsr, modval))
+				end
 			elseif funct3 == 5 then -- CSRRWI
 				local imm = rs1
 				if rd ~= 0 then
@@ -394,12 +398,16 @@ while true do
 				local imm = rs1
 				local ocsr = CSRs.read(funct12)
 				Registers.write(rd, ocsr)
-				CSRs.write(funct12, Num.bor(ocsr, imm))
+				if imm ~= 0 then
+					CSRs.write(funct12, Num.bor(ocsr, imm))
+				end
 			elseif funct3 == 7 then -- CSRRCI
 				local imm = rs1
 				local ocsr = CSRs.read(funct12)
 				Registers.write(rd, ocsr)
-				CSRs.write(funct12, Num.clear(ocsr, imm))
+				if imm ~= 0 then
+					CSRs.write(funct12, Num.clear(ocsr, imm))
+				end
 			end
 		elseif opcode == 47 then -- 0b0101111, AMO
 			local rd = Num.getBits(inst, 7, 11)
