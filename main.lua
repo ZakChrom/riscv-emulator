@@ -1,17 +1,18 @@
 require("src.helper")
 require("src.memory")
 require("src.registers")
+require("src.csrs")
 
 ---@param inst integer
 ---@return integer
 local function b_type_imm(inst)
-	return (Num.getBits(inst, 31, 31) << 12) + (Num.getBits(inst, 7, 7) << 11) + (Num.getBits(inst, 25, 30) << 5) + (Num.getBits(inst, 8, 11) << 1)
+	return Num.lshift(Num.getBits(inst, 31, 31), 12) + Num.lshift(Num.getBits(inst, 7, 7), 11) + Num.lshift(Num.getBits(inst, 25, 30), 5) + (Num.getBits(inst, 8, 11) * 2)
 end
 
 ---@param inst integer
 ---@return integer
 local function s_type_imm(inst)
-	return (Num.getBits(inst, 25, 31) << 5) + Num.getBits(inst, 7, 11)
+	return Num.lshift(Num.getBits(inst, 25, 31), 5) + Num.getBits(inst, 7, 11)
 end
 
 local pc = 0
@@ -83,7 +84,7 @@ while true do
 			local sb = Num.signed(b, 32)
 
 			local imm = b_type_imm(inst)
-			local inc = Num.signed(imm, 12)
+			local inc = Num.signed(imm, 13)
 			if funct3 == 0 then -- BEQ
 				if a == b then
 					pc_inc_amount = inc
@@ -131,7 +132,7 @@ while true do
 			local rs1 = Num.getBits(inst, 15, 19)
 			local rs2 = Num.getBits(inst, 20, 24)
 			local imm = s_type_imm(inst)
-			local addr = (rs1 + Num.sext(imm, 12)) % (2^32)
+			local addr = (Registers.read(rs1) + Num.sext(imm, 12)) % (2^32)
 			if funct3 == 0 then -- SB
 				Memory.write(addr, Registers.read(rs2), 1)
 			elseif funct3 == 1 then -- SH
@@ -479,6 +480,18 @@ while true do
 		end
 	else
 		-- raise illegal instruction... or handle c extension if we do that... or other stuff
+	end
+
+
+	for i = 1, 32 do
+		local v = Registers.read(i - 1)
+		if v ~= 0 then
+			io.stdout:write(tostring(i - 1) .. ": " .. tostring(v) .. " / ")
+		end
+	end
+	print()
+	for i = 1, 2^26 do
+		
 	end
 
 	pc = pc + pc_inc_amount
