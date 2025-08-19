@@ -2,6 +2,7 @@ require("src.helper")
 require("src.memory")
 require("src.registers")
 require("src.csrs")
+require('src.uart')
 
 ---@param inst integer
 ---@return integer
