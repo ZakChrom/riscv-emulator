@@ -1,8 +1,9 @@
 require("src.helper")
+require("src.uart")
 require("src.memory")
 require("src.registers")
 require("src.csrs")
-require('src.uart')
+require("src.trap")
 
 ---@param inst integer
 ---@return integer
@@ -16,11 +17,12 @@ local function s_type_imm(inst)
 	return Num.lshift(Num.getBits(inst, 25, 31), 5) + Num.getBits(inst, 7, 11)
 end
 
-local pc = 0
+Hart = {}
+Hart.pc = 0
 
 while true do
-	local inst = Memory.read(pc, 4)
-	local pc_inc_amount = 4
+	local inst = Memory.read(Hart.pc, 4)
+	Hart.pc_inc_amount = 4
 
 	if Num.getBits(inst, 0,1) == 3 then -- normal 32-bit instruction
 		local opcode = Num.getBits(inst, 0,6)
@@ -38,7 +40,7 @@ while true do
 
 			imm = Num.lshift(imm, 12)
 
-			Registers.write(rd, imm + pc)
+			Registers.write(rd, imm + Hart.pc)
 		elseif opcode == 111 then -- 0b1101111, JAL
 			local rd = Num.getBits(inst, 7, 11)
 
@@ -53,9 +55,9 @@ while true do
 				imm = imm - 2^21
 			end
 
-			Registers.write(rd, pc + 4)
+			Registers.write(rd, Hart.pc + 4)
 
-			pc_inc_amount = imm
+			Hart.pc_inc_amount = imm
 		elseif opcode == 103 then -- 0b1100111, JALR
 			local rd = Num.getBits(inst, 7, 11)
 			local funct3 = Num.getBits(inst, 12, 14)
@@ -71,9 +73,9 @@ while true do
 
 			target = target - (target % 2) -- the spec tells me to clear this bit so i do (idk why honestly but apparently they wanted it to work that way)
 
-			Registers.write(rd, pc + 4)
-			pc = target
-			pc_inc_amount = 0
+			Registers.write(rd, Hart.pc + 4)
+			Hart.pc = target
+			Hart.pc_inc_amount = 0
 		elseif opcode == 99 then -- 0b1100011, BRANCH
 			local funct3 = Num.getBits(inst, 12, 14)
 
@@ -88,27 +90,27 @@ while true do
 			local inc = Num.signed(imm, 13)
 			if funct3 == 0 then -- BEQ
 				if a == b then
-					pc_inc_amount = inc
+					Hart.pc_inc_amount = inc
 				end
 			elseif funct3 == 1 then -- BNE
 				if a ~= b then
-					pc_inc_amount = inc
+					Hart.pc_inc_amount = inc
 				end
 			elseif funct3 == 4 then -- BLT
 				if sa < sb then
-					pc_inc_amount = inc
+					Hart.pc_inc_amount = inc
 				end
 			elseif funct3 == 5 then -- BGE
 				if sa > sb then
-					pc_inc_amount = inc
+					Hart.pc_inc_amount = inc
 				end
 			elseif funct3 == 6 then -- BLTU
 				if a < b then
-					pc_inc_amount = inc
+					Hart.pc_inc_amount = inc
 				end
 			elseif funct3 == 7 then -- BGEU
 				if a >= b then
-					pc_inc_amount = inc
+					Hart.pc_inc_amount = inc
 				end
 			end
 		elseif opcode == 3 then -- 0b0000011, LOAD
@@ -522,8 +524,9 @@ while true do
 			end
 		end
 	else
-		-- raise illegal instruction... or handle c extension if we do that... or other stuff
+		print("illegal instruction at " .. tostring(Hart.pc))
+		Trap.raise(2, 0)
 	end
 
-	pc = pc + pc_inc_amount
+	Hart.pc = Hart.pc + Hart.pc_inc_amount
 end
