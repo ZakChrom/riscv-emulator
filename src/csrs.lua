@@ -90,3 +90,137 @@ CSRs[0xf12] = {
 		return false -- unreachable
 	end
 }
+
+-- mtvec
+CSRs[0x305] = {
+	v = 0,
+	mode = MACHINE,
+	perms = READ + WRITE,
+	read = function ()
+		return CSRs[0x305].v
+	end,
+	write = function (v)
+		if Num.getBits(v, 0, 1) >= 2 then
+			-- Mode >= 2 is reserved so reset it to 0
+			v = Num.getBits(v, 2, 31) * 4
+		end
+		CSRs[0x305].v = v
+		return true
+	end
+}
+
+-- mscratch
+CSRs[0x340] = {
+	v = 0,
+	mode = MACHINE,
+	perms = READ + WRITE,
+	read = function ()
+		return CSRs[0x340].v
+	end,
+	write = function (v)
+		CSRs[0x340].v = v
+		return true
+	end
+}
+
+-- mtval
+CSRs[0x343] = {
+	v = 0,
+	mode = MACHINE,
+	perms = READ + WRITE,
+	read = function ()
+		return CSRs[0x343].v
+	end,
+	write = function (v)
+		CSRs[0x343].v = v
+		return true
+	end
+}
+
+-- mepc
+CSRs[0x341] = {
+	v = 0,
+	mode = MACHINE,
+	perms = READ + WRITE,
+	read = function ()
+		return CSRs[0x341].v
+	end,
+	write = function (v)
+		-- Clear bottom bit because we dont support 16 bit aligned instructions
+		CSRs[0x341].v = Num.getBits(v, 1, 31) * 2
+		return true
+	end
+}
+
+-- mie
+CSRs[0x304] = {
+	v = 0,
+	mode = MACHINE,
+	perms = READ + WRITE,
+	read = function ()
+		return CSRs[0x304].v
+	end,
+	write = function (v)
+		-- Only support 16 kinds of interupts
+		CSRs[0x304].v = Num.getBits(v, 0, 15)
+		return true
+	end
+}
+
+-- mip
+CSRs[0x344] = {
+	v = 0,
+	mode = MACHINE,
+	perms = READ + WRITE,
+	read = function ()
+		return CSRs[0x344].v
+	end,
+	write = function (v)
+		-- Only support 16 kinds of interupts
+		CSRs[0x344].v = Num.getBits(v, 0, 15)
+		return true
+	end
+}
+
+-- mcause
+CSRs[0x342] = {
+	v = 0,
+	mode = MACHINE,
+	perms = READ + WRITE,
+	read = function ()
+		return CSRs[0x342].v
+	end,
+	write = function (v)
+		-- Techincally the exception code has to only have legal values but whatever
+		CSRs[0x342].v = v
+		return true
+	end
+}
+
+-- I am NOT gonna check for legal values. It has like 20 fields in it
+-- mstatus
+CSRs[0x300] = {
+	v = 0,
+	mode = MACHINE,
+	perms = READ + WRITE,
+	read = function ()
+		return CSRs[0x300].v
+	end,
+	write = function (v)
+		CSRs[0x300].v = v
+		return true
+	end
+}
+-- mstatush
+CSRs[0x310] = {
+	v = 0,
+	mode = MACHINE,
+	perms = READ + WRITE,
+	read = function ()
+		return CSRs[0x310].v
+	end,
+	write = function (v)
+		CSRs[0x310].v = v
+		return true
+	end
+}
