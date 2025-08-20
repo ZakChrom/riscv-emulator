@@ -1,4 +1,5 @@
-ecall ebreak mret
-Check for errors on invalid csrs and trap or smth
-Traps prob dont work so make them work
-Test stuff
+- ecall ebreak mret
+- Check for errors on invalid csrs and trap or smth
+- Traps prob dont work so make them work
+- Test stuff
+- Find a good name for the emulator
