@@ -1,5 +1,6 @@
 require("src.helper")
 require("src.uart")
+require("src.ram")
 require("src.memory")
 require("src.registers")
 require("src.csrs")
@@ -24,7 +25,9 @@ while true do
 	local inst = Memory.read(Hart.pc, 4)
 	Hart.pc_inc_amount = 4
 
-	if Num.getBits(inst, 0,1) == 3 then -- normal 32-bit instruction
+	if not inst then
+		Trap.raise(1, Hart.pc) -- 1 = Instruction Access Fault
+	elseif Num.getBits(inst, 0,1) == 3 then -- normal 32-bit instruction
 		local opcode = Num.getBits(inst, 0,6)
 
 		if opcode == 55 then -- 0b0110111, LUI
@@ -120,15 +123,40 @@ while true do
 			local imm = Num.getBits(inst, 20, 31)
 			local addr = (Registers.read(rs1) + Num.sext(imm, 12)) % (2^32)
 			if funct3 == 0 then -- LB
-				Registers.write(rd, Num.sext(Memory.read(addr, 1), 8))
+				local value = Memory.read(addr, 1)
+				if value then
+					Registers.write(rd, Num.sext(value, 8))
+				else
+					Trap.raise(5, addr) -- 5 = Load Access Fault
+				end
 			elseif funct3 == 1 then -- LH
-				Registers.write(rd, Num.sext(Memory.read(addr, 2), 16))
+				local value = Memory.read(addr, 2)
+				if value then
+					Registers.write(rd, Num.sext(value, 16))
+				else
+					Trap.raise(5, addr)
+				end
 			elseif funct3 == 2 then -- LW
-				Registers.write(rd, Memory.read(addr, 4))
+				local value = Memory.read(addr, 4)
+				if value then
+					Registers.write(rd, value)
+				else
+					Trap.raise(5, addr)
+				end
 			elseif funct3 == 4 then -- LBU
-				Registers.write(rd, Memory.read(addr, 1))
+				local value = Memory.read(addr, 1)
+				if value then
+					Registers.write(rd, value)
+				else
+					Trap.raise(5, addr)
+				end
 			elseif funct3 == 5 then -- LHU
-				Registers.write(rd, Memory.read(addr, 2))
+				local value = Memory.read(addr, 2)
+				if value then
+					Registers.write(rd, value)
+				else
+					Trap.raise(5, addr)
+				end
 			end
 		elseif opcode == 35 then -- 0b0100011, STORE
 			local funct3 = Num.getBits(inst, 12, 14)
@@ -137,11 +165,20 @@ while true do
 			local imm = s_type_imm(inst)
 			local addr = (Registers.read(rs1) + Num.sext(imm, 12)) % (2^32)
 			if funct3 == 0 then -- SB
-				Memory.write(addr, Registers.read(rs2), 1)
+				local succ = Memory.write(addr, Registers.read(rs2), 1)
+				if not succ then
+					Trap.raise(7, addr) --- 7 = Store/AMO access fault
+				end
 			elseif funct3 == 1 then -- SH
-				Memory.write(addr, Registers.read(rs2), 2)
+				local succ = Memory.write(addr, Registers.read(rs2), 2)
+				if not succ then
+					Trap.raise(7, addr)
+				end
 			elseif funct3 == 2 then -- SW
-				Memory.write(addr, Registers.read(rs2), 4)
+				local succ = Memory.write(addr, Registers.read(rs2), 4)
+				if not succ then
+					Trap.raise(7, addr)
+				end
 			end
 		elseif opcode == 19 then -- 0b0010011, register-immediate stuff
 			local funct3 = Num.getBits(inst, 12, 14)
@@ -423,104 +460,147 @@ while true do
 			local aq = Num.getBits(inst, 26,26)
 
 			if funct5 == 2 then -- LR.W
-				local data = Memory.read(Registers.read(rs1), 4)
-
-				Registers.write(rd, data)
+				local addr = Registers.read(rs1)
+				local data = Memory.read(addr, 4)
+				if data then
+					Registers.write(rd, data)
+				else -- this is actually a Load Access Fault, even though it's an AMO instruction...
+					Trap.raise(5, addr) -- 5 = Load Access Fault
+				end
 			elseif funct5 == 3 then -- SC.W
 				local addr = Registers.read(rs1)
 				local data = Registers.read(rs2)
 
-				Memory.write(addr, data, 4)
-
-				Registers.write(rd, 0)
+				local succ = Memory.write(addr, data, 4)
+				if succ then
+					Registers.write(rd, 0)
+				else
+					Trap.raise(7, addr) -- Store/AMO Access Fault
+				end
 			elseif funct5 == 1 then -- AMOSWAP.W
 				local addr = Registers.read(rs1)
-				local data = Memory.read(addr, 4)
-				local rs2v = Registers.read(rs2)
-
-				Memory.write(addr, rs2v, 4)
-
-				Registers.write(rd, data)
+				if Memory.validWrite(addr, 4) and Memory.validRead(addr, 4) then
+					local data = Memory.read(addr, 4)
+					local rs2v = Registers.read(rs2)
+	
+					Memory.write(addr, rs2v, 4)
+	
+					Registers.write(rd, data)
+				else
+					Trap.raise(7, addr) -- Store/AMO Access Fault
+				end
 			elseif funct5 == 0 then -- AMOADD.W
 				local addr = Registers.read(rs1)
-				local data = Memory.read(addr, 4)
-				local rs2v = Registers.read(rs2)
+				if Memory.validWrite(addr, 4) and Memory.validRead(addr, 4) then
+					local data = Memory.read(addr, 4)
+					local rs2v = Registers.read(rs2)
 
-				Memory.write(addr, Num.add(data, rs2v), 4)
+					Memory.write(addr, Num.add(data, rs2v), 4)
 
-				Registers.write(rd, data)
+					Registers.write(rd, data)
+				else
+					Trap.raise(7, addr)
+				end
 			elseif funct5 == 4 then -- AMOXOR.W
 				local addr = Registers.read(rs1)
-				local data = Memory.read(addr, 4)
-				local rs2v = Registers.read(rs2)
+				if Memory.validWrite(addr, 4) and Memory.validRead(addr, 4) then
+					local data = Memory.read(addr, 4)
+					local rs2v = Registers.read(rs2)
 
-				Memory.write(addr, Num.bxor(data, rs2v), 4)
+					Memory.write(addr, Num.bxor(data, rs2v), 4)
 
-				Registers.write(rd, data)
+					Registers.write(rd, data)
+				else
+					Trap.raise(7, addr)
+				end
 			elseif funct5 == 12 then -- AMOAND.W
 				local addr = Registers.read(rs1)
-				local data = Memory.read(addr, 4)
-				local rs2v = Registers.read(rs2)
+				if Memory.validWrite(addr, 4) and Memory.validRead(addr, 4) then
+					local data = Memory.read(addr, 4)
+					local rs2v = Registers.read(rs2)
 
-				Memory.write(addr, Num.band(data, rs2v), 4)
+					Memory.write(addr, Num.band(data, rs2v), 4)
 
-				Registers.write(rd, data)
+					Registers.write(rd, data)
+				else
+					Trap.raise(7, addr)
+				end
 			elseif funct5 == 8 then -- AMOOR.W
 				local addr = Registers.read(rs1)
-				local data = Memory.read(addr, 4)
-				local rs2v = Registers.read(rs2)
+				if Memory.validWrite(addr, 4) and Memory.validRead(addr, 4) then
+					local data = Memory.read(addr, 4)
+					local rs2v = Registers.read(rs2)
 
-				Memory.write(addr, Num.bor(data, rs2v), 4)
+					Memory.write(addr, Num.bor(data, rs2v), 4)
 
-				Registers.write(rd, data)
+					Registers.write(rd, data)
+				else
+					Trap.raise(7, addr)
+				end
 			elseif funct5 == 16 then -- AMOMIN.W
 				local addr = Registers.read(rs1)
-				local data = Memory.read(addr, 4)
-				local rs2v = Registers.read(rs2)
+				if Memory.validWrite(addr, 4) and Memory.validRead(addr, 4) then
+					local data = Memory.read(addr, 4)
+					local rs2v = Registers.read(rs2)
 
-				if Num.signed(data, 32) < Num.signed(rs2v, 32) then
-					Memory.write(addr, data, 4)
+					if Num.signed(data, 32) < Num.signed(rs2v, 32) then
+						Memory.write(addr, data, 4)
+					else
+						Memory.write(addr, rs2v, 4)
+					end
+
+					Registers.write(rd, data)
 				else
-					Memory.write(addr, rs2v, 4)
+					Trap.raise(7, addr)
 				end
-
-				Registers.write(rd, data)
 			elseif funct5 == 20 then -- AMOMAX.W
 				local addr = Registers.read(rs1)
-				local data = Memory.read(addr, 4)
-				local rs2v = Registers.read(rs2)
+				if Memory.validWrite(addr, 4) and Memory.validRead(addr, 4) then
+					local data = Memory.read(addr, 4)
+					local rs2v = Registers.read(rs2)
 
-				if Num.signed(data, 32) > Num.signed(rs2v, 32) then
-					Memory.write(addr, data, 4)
+					if Num.signed(data, 32) > Num.signed(rs2v, 32) then
+						Memory.write(addr, data, 4)
+					else
+						Memory.write(addr, rs2v, 4)
+					end
+
+					Registers.write(rd, data)
 				else
-					Memory.write(addr, rs2v, 4)
+					Trap.raise(7, addr)
 				end
-
-				Registers.write(rd, data)
 			elseif funct5 == 24 then -- AMOMINU.W
 				local addr = Registers.read(rs1)
-				local data = Memory.read(addr, 4)
-				local rs2v = Registers.read(rs2)
+				if Memory.validWrite(addr, 4) and Memory.validRead(addr, 4) then
+					local data = Memory.read(addr, 4)
+					local rs2v = Registers.read(rs2)
 
-				if data < rs2v then
-					Memory.write(addr, data, 4)
+					if data < rs2v then
+						Memory.write(addr, data, 4)
+					else
+						Memory.write(addr, rs2v, 4)
+					end
+
+					Registers.write(rd, data)
 				else
-					Memory.write(addr, rs2v, 4)
+					Trap.raise(7, addr)
 				end
-
-				Registers.write(rd, data)
 			elseif funct5 == 28 then -- AMOMAXU.W
 				local addr = Registers.read(rs1)
-				local data = Memory.read(addr, 4)
-				local rs2v = Registers.read(rs2)
+				if Memory.validWrite(addr, 4) and Memory.validRead(addr, 4) then
+					local data = Memory.read(addr, 4)
+					local rs2v = Registers.read(rs2)
 
-				if data > rs2v then
-					Memory.write(addr, data, 4)
+					if data > rs2v then
+						Memory.write(addr, data, 4)
+					else
+						Memory.write(addr, rs2v, 4)
+					end
+
+					Registers.write(rd, data)
 				else
-					Memory.write(addr, rs2v, 4)
+					Trap.raise(7, addr)
 				end
-
-				Registers.write(rd, data)
 			end
 		end
 	else
