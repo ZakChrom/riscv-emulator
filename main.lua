@@ -402,9 +402,13 @@ while true do
 
 			if funct3 == 0 then -- ECALL, EBREAK
 				if funct12 == 0 then -- ECALL
-
+					local trap = 8 -- TODO: make it based on current mode (user mode = 8, machine mode = 11)
+					Trap.raise(trap, 0)
 				elseif funct12 == 1 then -- EBREAK
-
+					local trap = 3 -- DOESN'T CHANGE :FIRE: :FIRE: :FIRE:
+					Trap.raise(trap, 0)
+				elseif funct12 == 770 then -- mret: 0b001100000010
+					-- TODO: TODO: TODO: TODO: this
 				end
 			elseif funct3 == 1 then -- CSRRW
 				if rd ~= 0 then
