@@ -605,7 +605,7 @@ while true do
 		end
 	else
 		print("illegal instruction at " .. tostring(Hart.pc))
-		Trap.raise(2, 0)
+		Trap.raise(2, inst)
 	end
 
 	Hart.pc = Hart.pc + Hart.pc_inc_amount
