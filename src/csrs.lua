@@ -1,7 +1,7 @@
 CSRs = {}
-
-local USER = 0
-local MACHINE = 3
+Mode = {}
+Mode.User = 0
+Mode.Machine = 3
 local READ = 1
 local WRITE = 2
 
@@ -53,7 +53,7 @@ end
 
 -- misa
 CSRs[0x301] = {
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ + WRITE,
 	read = function ()
 		local extensions = 4353 -- ima = (1 << 8) | (1 << 12) | (1 << 0)
@@ -69,7 +69,7 @@ CSRs[0x301] = {
 
 -- mvendorid
 CSRs[0xf11] = {
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ,
 	read = function ()
 		return 0
@@ -81,7 +81,7 @@ CSRs[0xf11] = {
 
 -- marchid
 CSRs[0xf12] = {
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ,
 	read = function ()
 		return 0
@@ -94,7 +94,7 @@ CSRs[0xf12] = {
 -- mtvec
 CSRs[0x305] = {
 	v = 0,
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ + WRITE,
 	read = function ()
 		return CSRs[0x305].v
@@ -112,7 +112,7 @@ CSRs[0x305] = {
 -- mscratch
 CSRs[0x340] = {
 	v = 0,
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ + WRITE,
 	read = function ()
 		return CSRs[0x340].v
@@ -126,7 +126,7 @@ CSRs[0x340] = {
 -- mtval
 CSRs[0x343] = {
 	v = 0,
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ + WRITE,
 	read = function ()
 		return CSRs[0x343].v
@@ -140,7 +140,7 @@ CSRs[0x343] = {
 -- mepc
 CSRs[0x341] = {
 	v = 0,
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ + WRITE,
 	read = function ()
 		return CSRs[0x341].v
@@ -155,7 +155,7 @@ CSRs[0x341] = {
 -- mie
 CSRs[0x304] = {
 	v = 0,
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ + WRITE,
 	read = function ()
 		return CSRs[0x304].v
@@ -170,7 +170,7 @@ CSRs[0x304] = {
 -- mip
 CSRs[0x344] = {
 	v = 0,
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ + WRITE,
 	read = function ()
 		return CSRs[0x344].v
@@ -185,7 +185,7 @@ CSRs[0x344] = {
 -- mcause
 CSRs[0x342] = {
 	v = 0,
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ + WRITE,
 	read = function ()
 		return CSRs[0x342].v
@@ -201,7 +201,7 @@ CSRs[0x342] = {
 -- mstatus
 CSRs[0x300] = {
 	v = 0,
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ + WRITE,
 	read = function ()
 		return CSRs[0x300].v
@@ -214,7 +214,7 @@ CSRs[0x300] = {
 -- mstatush
 CSRs[0x310] = {
 	v = 0,
-	mode = MACHINE,
+	mode = Mode.Machine,
 	perms = READ + WRITE,
 	read = function ()
 		return CSRs[0x310].v

@@ -20,6 +20,7 @@ end
 
 Hart = {}
 Hart.pc = 0
+Hart.mode = Mode.Machine
 
 while true do
 	local inst = Memory.read(Hart.pc, 4)
@@ -408,7 +409,15 @@ while true do
 					local trap = 3 -- DOESN'T CHANGE :FIRE: :FIRE: :FIRE:
 					Trap.raise(trap, 0)
 				elseif funct12 == 770 then -- mret: 0b001100000010
-					-- TODO: TODO: TODO: TODO: this
+					-- mie = mpie; mode = mpp; mpie = 1; mpp = 0; pc = mepc
+					local mstatus = assert(CSRs.read(0x300))
+					local mpie = Num.getBits(mstatus, 7, 7)
+					local mpp = Num.getBits(mstatus, 11, 12)
+					assert(mpp == 0 or mpp == 3)
+					Hart.mode = mpp
+					CSRs.write(0x300, Num.clear(mstatus, 6280) + (mpie * 8) + 128) -- 0b1100010001000
+					Hart.pc = assert(CSRs.read(0x341))
+					Hart.pc_inc_amount = 0
 				end
 			elseif funct3 == 1 then -- CSRRW
 				if rd ~= 0 then
