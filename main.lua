@@ -7,6 +7,20 @@ require("src.registers")
 require("src.csrs")
 require("src.trap")
 
+local filename = arg[1]
+
+if filename then
+	local file = assert(io.open(filename, "rb"))
+
+	local data = file:read("*all")
+	file:close()
+
+	-- write it into ram
+	for i = 1,#data do
+		Ram.set(i-1, data:byte(i,i))
+	end
+end
+
 ---@param inst integer
 ---@return integer
 local function b_type_imm(inst)
