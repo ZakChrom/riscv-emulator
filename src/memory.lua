@@ -28,6 +28,8 @@ function Memory.validRead(staddr, len)
 			ok = true
 		elseif addr == UART.status then
 			ok = true
+		elseif addr >= DTB.base and addr < (DTB.base + DTB.length) then
+			ok = true
 		elseif addr >= Ram.start then
 			ok = true
 		end
@@ -45,6 +47,8 @@ function Memory.readRaw(addr)
 		return UART.read()
 	elseif addr == UART.status then
 		return UART.status
+	elseif addr >= DTB.base and addr < (DTB.base + DTB.length) then
+		return DTB.read(addr - DTB.base)
 	elseif addr >= Ram.start then
 		return Ram.get(addr - Ram.start)
 	end

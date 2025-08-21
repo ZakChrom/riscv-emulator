@@ -1,6 +1,7 @@
 require("src.helper")
 require("src.uart")
 require("src.ram")
+require("src.dtb")
 require("src.memory")
 require("src.registers")
 require("src.csrs")
@@ -21,6 +22,8 @@ end
 Hart = {}
 Hart.pc = 0
 Hart.mode = Mode.Machine
+
+DTB.load("the.dtb")
 
 while true do
 	local inst = Memory.read(Hart.pc, 4)
