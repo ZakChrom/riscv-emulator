@@ -403,8 +403,11 @@ while true do
 
 			if funct3 == 0 then -- ECALL, EBREAK
 				if funct12 == 0 then -- ECALL
-					local trap = 8 -- TODO: make it based on current mode (user mode = 8, machine mode = 11)
-					Trap.raise(trap, 0)
+					if Hart.mode == Mode.User then
+						Trap.raise(8, 0)
+					else
+						Trap.raise(11, 0)
+					end
 				elseif funct12 == 1 then -- EBREAK
 					local trap = 3 -- DOESN'T CHANGE :FIRE: :FIRE: :FIRE:
 					Trap.raise(trap, 0)
