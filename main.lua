@@ -1,8 +1,8 @@
 require("src.helper")
+require("src.memory")
 require("src.uart")
 require("src.ram")
 require("src.dtb")
-require("src.memory")
 require("src.registers")
 require("src.csrs")
 require("src.trap")
@@ -37,7 +37,6 @@ Hart = {}
 Hart.pc = 0x80000000
 Hart.mode = Mode.Machine
 
-DTB.load("the.dtb")
 Registers.write(10, 0) -- Hart id
 Registers.write(11, 0x1000)
 

@@ -7,6 +7,23 @@ function DTB.load(filename)
 	file:close()
 end
 
+DTB.load("the.dtb") -- need it loaded to register it into memory
+
 function DTB.read(addr)
 	return DTB.dtb:byte(addr + 1, addr + 1)
 end
+
+Memory.register(DTB.base, DTB.length, {
+	read = function (addr)
+		return DTB.read(addr)
+	end,
+	write = function (addr, byte)
+		-- unreachable
+	end,
+	validRead = function ()
+		return true -- all readable
+	end,
+	validWrite = function ()
+		return false -- no
+	end
+})

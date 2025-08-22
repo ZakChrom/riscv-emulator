@@ -1,21 +1,32 @@
 Memory = {}
+Memory.blocks = {} -- "block" here is just a group of shit because idk what else to name it
+
+function Memory.register(st,size,callbacks)
+	Memory.blocks[#Memory.blocks+1] = {st,size,callbacks}
+end
 
 function Memory.validWrite(staddr, len)
 	len = len or 1
 	for i = 0,len-1 do
 		local addr = staddr + i
-		local ok = false
-		if addr == UART.io then
-			ok = true
-		elseif addr == UART.status then
-			ok = true
-		elseif addr >= UART.base and addr < (UART.base + 0x100) then
-			ok = true
-		elseif addr >= Ram.start then
-			ok = true
+		local foundblock = false
+
+		for j = 1,#Memory.blocks do
+			local block = Memory.blocks[j]
+			local st,size = block[1],block[2]
+			local cbs = block[3]
+
+			if addr >= st and addr < st+size then
+				local localaddr = addr - st
+
+				if not cbs.validWrite(localaddr) then return false end
+				foundblock = true;
+
+				break -- no other blocks needed
+			end
 		end
 
-		if not ok then return false end
+		if not foundblock then return false end
 	end
 
 	return true
@@ -25,20 +36,24 @@ function Memory.validRead(staddr, len)
 	len = len or 1
 	for i = 0,len-1 do
 		local addr = staddr + i
-		local ok = false
-		if addr == UART.io then
-			ok = true
-		elseif addr == UART.status then
-			ok = true
-		elseif addr >= UART.base and addr < (UART.base + 0x100) then
-			ok = true
-		elseif addr >= DTB.base and addr < (DTB.base + DTB.length) then
-			ok = true
-		elseif addr >= Ram.start then
-			ok = true
+		local foundblock = false
+
+		for j = 1,#Memory.blocks do
+			local block = Memory.blocks[j]
+			local st,size = block[1],block[2]
+			local cbs = block[3]
+
+			if addr >= st and addr < st+size then
+				local localaddr = addr - st
+
+				if not cbs.validRead(localaddr) then return false end
+				foundblock = true;
+
+				break -- no other blocks needed
+			end
 		end
 
-		if not ok then return false end
+		if not foundblock then return false end
 	end
 
 	return true
@@ -46,17 +61,16 @@ end
 
 ---@param addr integer
 ---@return integer
-function Memory.readRaw(addr)
-	if addr == UART.io then
-		return UART.read()
-	elseif addr == UART.status then
-		return UART.status2()
-	elseif addr >= UART.base and addr < (UART.base + 0x100) then
-		return 0
-	elseif addr >= DTB.base and addr < (DTB.base + DTB.length) then
-		return DTB.read(addr - DTB.base)
-	elseif addr >= Ram.start then
-		return Ram.get(addr - Ram.start)
+function Memory.readRaw(addr) -- raw functions assume you've already checked it's valid
+	for j = 1,#Memory.blocks do
+		local block = Memory.blocks[j]
+		local st,size = block[1],block[2]
+		local cbs = block[3]
+
+		if addr >= st and addr < st+size then
+			local localaddr = addr - st
+			return cbs.read(localaddr)
+		end
 	end
 
 	return false
@@ -65,17 +79,16 @@ end
 ---@param addr integer
 ---@param byte integer
 function Memory.writeRaw(addr, byte)
-	if addr == UART.io then
-		UART.write(byte)
-		return true
-	elseif addr == UART.status then
-		-- no thanks
-		return true -- definitely succeeded
-	elseif addr >= UART.base and addr < (UART.base + 0x100) then
-		return true -- nuh uh
-	elseif addr >= Ram.start then
-		Ram.set(addr - Ram.start, byte)
-		return true
+	for j = 1,#Memory.blocks do
+		local block = Memory.blocks[j]
+		local st,size = block[1],block[2]
+		local cbs = block[3]
+
+		if addr >= st and addr < st+size then
+			local localaddr = addr - st
+			cbs.write(localaddr, byte)
+			return true
+		end
 	end
 
 	return false
