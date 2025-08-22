@@ -124,7 +124,7 @@ while true do
 					Hart.pc_inc_amount = inc
 				end
 			elseif funct3 == 5 then -- BGE
-				if sa > sb then
+				if sa >= sb then
 					Hart.pc_inc_amount = inc
 				end
 			elseif funct3 == 6 then -- BLTU
@@ -229,11 +229,11 @@ while true do
 				Registers.write(rd, Num.band(a, immediate))
 
 			elseif funct3 == 1 then -- SLLI
-				local shift_amount = Num.getBits(immediate, 0,4)
+				local shift_amount = Num.getBits(inst, 20,24)
 
 				Registers.write(rd, Num.lshift(a, shift_amount))
 			elseif funct3 == 5 then -- SRLI/SRAI
-				local shift_amount = Num.getBits(immediate, 0,4)
+				local shift_amount = Num.getBits(inst, 20,24)
 				if Num.getBits(inst, 30, 30) == 1 then -- SRAI
 					local is_signed = Num.isneg(a)
 
