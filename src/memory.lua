@@ -9,6 +9,8 @@ function Memory.validWrite(staddr, len)
 			ok = true
 		elseif addr == UART.status then
 			ok = true
+		elseif addr >= UART.base and addr < (UART.base + 0x100) then
+			ok = true
 		elseif addr >= Ram.start then
 			ok = true
 		end
@@ -28,6 +30,8 @@ function Memory.validRead(staddr, len)
 			ok = true
 		elseif addr == UART.status then
 			ok = true
+		elseif addr >= UART.base and addr < (UART.base + 0x100) then
+			ok = true
 		elseif addr >= DTB.base and addr < (DTB.base + DTB.length) then
 			ok = true
 		elseif addr >= Ram.start then
@@ -46,7 +50,9 @@ function Memory.readRaw(addr)
 	if addr == UART.io then
 		return UART.read()
 	elseif addr == UART.status then
-		return UART.status
+		return UART.status2()
+	elseif addr >= UART.base and addr < (UART.base + 0x100) then
+		return 0
 	elseif addr >= DTB.base and addr < (DTB.base + DTB.length) then
 		return DTB.read(addr - DTB.base)
 	elseif addr >= Ram.start then
@@ -65,6 +71,8 @@ function Memory.writeRaw(addr, byte)
 	elseif addr == UART.status then
 		-- no thanks
 		return true -- definitely succeeded
+	elseif addr >= UART.base and addr < (UART.base + 0x100) then
+		return true -- nuh uh
 	elseif addr >= Ram.start then
 		Ram.set(addr - Ram.start, byte)
 		return true
@@ -107,7 +115,7 @@ function Memory.write(addr, v, n_bytes)
 
 	for i = 0, n_bytes-1 do
 		local real = Num.rshift(v, i * 8) % 256
-		Memory.writeRaw(addr + 1, real) -- no checking here because we already checked it with validWrite
+		Memory.writeRaw(addr + i, real) -- no checking here because we already checked it with validWrite
 	end
 
 	return true;

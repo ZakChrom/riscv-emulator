@@ -15,7 +15,7 @@ function UART.update()
 	end
 end
 
-function UART.status()
+function UART.status2()
 	local val = 0x20 -- says we're ready to receive output
 	if #UART.inputBuffer > 0 then
 		val = val + 0x01 -- says we're ready to feed it data
@@ -35,5 +35,6 @@ function UART.read()
 end
 
 function UART.write(byte)
-	io.write(byte)
+	io.write(string.char(byte))
+	io.flush()
 end

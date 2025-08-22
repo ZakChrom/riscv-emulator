@@ -34,12 +34,15 @@ local function s_type_imm(inst)
 end
 
 Hart = {}
-Hart.pc = 0
+Hart.pc = 0x80000000
 Hart.mode = Mode.Machine
 
 DTB.load("the.dtb")
+Registers.write(10, 0) -- Hart id
+Registers.write(11, 0x1000)
 
 while true do
+	UART.update()
 	local inst = Memory.read(Hart.pc, 4)
 	Hart.pc_inc_amount = 4
 
@@ -90,7 +93,7 @@ while true do
 			end
 
 			local base = Registers.read(rs1)
-			local target = base + imm
+			local target = Num.add(base, imm)
 
 			target = target - (target % 2) -- the spec tells me to clear this bit so i do (idk why honestly but apparently they wanted it to work that way)
 
@@ -448,7 +451,7 @@ while true do
 				CSRs.write(funct12, newval)
 			elseif funct3 == 2 then -- CSRRS
 				local ocsr = CSRs.read(funct12)
-				Registers.write(rd, ocsr)
+				Registers.write(rd, ocsr or 0)
 				if rs1 ~= 0 then
 					local modval = Registers.read(rs1)
 					CSRs.write(funct12, Num.bor(ocsr, modval))
