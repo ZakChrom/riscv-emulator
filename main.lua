@@ -219,8 +219,8 @@ while true do
 			local sa = Num.signed(a, 32)
 
 			if Num.getBits(immediate, 11, 11) == 1 then -- oh fuck off sign bit
-				immediate = immediate + 4294963200
-				simmediate = simmediate - 2^12
+				simmediate = Num.signed(simmediate, 12)
+				immediate = Num.sext(immediate, 12)
 			end
 
 			if funct3 == 0 then -- ADDI
@@ -267,7 +267,7 @@ while true do
 
 			local funct7 = Num.getBits(inst, 25, 31)
 
-			if (funct7 % 2) == 1 then
+			if funct7 == 1 then
 				local rs1v, rs2v = Registers.read(rs1), Registers.read(rs2)
 				-- M extension
 				if funct3 == 0 then -- MUL: signed x signed lower bits
