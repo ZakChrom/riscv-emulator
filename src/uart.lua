@@ -15,7 +15,7 @@ function UART.update()
 end
 
 function UART.getStatus()
-	local val = 0x20 -- says we're ready to receive output
+	local val = 0x60 -- says we're ready to receive output
 	if #UART.inputBuffer > 0 then
 		val = val + 0x01 -- says we're ready to feed it data
 	end

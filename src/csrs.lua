@@ -224,3 +224,12 @@ CSRs[0x310] = {
 		return true
 	end
 }
+
+CSRs[0xF14] = { -- mhartid
+	mode = Mode.Machine,
+	perms = READ,
+	read = function()
+		return 0
+	end,
+	write = function() return false end -- unreachable
+}

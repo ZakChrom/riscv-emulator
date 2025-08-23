@@ -3,6 +3,7 @@ require("src.memory")
 require("src.uart")
 require("src.ram")
 require("src.dtb")
+require("src.clint")
 require("src.registers")
 require("src.csrs")
 require("src.trap")
@@ -40,7 +41,14 @@ Hart.mode = Mode.Machine
 Registers.write(10, 0) -- Hart id
 Registers.write(11, 0x1000)
 
+local last_time = os.clock()
+
 while true do
+	local now = os.clock()
+	local timediff = now - last_time
+	last_time = now
+	CLINT.update(math.floor(timediff * 10000000 + 0.5)) -- our timer is in a bullshit hz but it works
+
 	UART.update()
 	local inst = Memory.read(Hart.pc, 4)
 	Hart.pc_inc_amount = 4
@@ -442,43 +450,43 @@ while true do
 					Hart.pc_inc_amount = 0
 				end
 			elseif funct3 == 1 then -- CSRRW
+				local newval = Registers.read(rs1)
 				if rd ~= 0 then
-					local ocsr = CSRs.read(funct12)
+					local ocsr = CSRs.read(funct12) or 0
 					Registers.write(rd, ocsr)
 				end
-				local newval = Registers.read(rs1)
 				CSRs.write(funct12, newval)
 			elseif funct3 == 2 then -- CSRRS
-				local ocsr = CSRs.read(funct12)
-				Registers.write(rd, ocsr or 0)
+				local ocsr = CSRs.read(funct12) or 0
+				local modval = Registers.read(rs1)
+				Registers.write(rd, ocsr)
 				if rs1 ~= 0 then
-					local modval = Registers.read(rs1)
 					CSRs.write(funct12, Num.bor(ocsr, modval))
 				end
 			elseif funct3 == 3 then -- CSRRC
-				local ocsr = CSRs.read(funct12)
+				local ocsr = CSRs.read(funct12) or 0
+				local modval = Registers.read(rs1)
 				Registers.write(rd, ocsr)
 				if rs1 ~= 0 then
-					local modval = Registers.read(rs1)
 					CSRs.write(funct12, Num.clear(ocsr, modval))
 				end
 			elseif funct3 == 5 then -- CSRRWI
 				local imm = rs1
 				if rd ~= 0 then
-					local ocsr = CSRs.read(funct12)
+					local ocsr = CSRs.read(funct12) or 0
 					Registers.write(rd, ocsr)
 				end
 				CSRs.write(funct12, imm)
 			elseif funct3 == 6 then -- CSRRSI
 				local imm = rs1
-				local ocsr = CSRs.read(funct12)
+				local ocsr = CSRs.read(funct12) or 0
 				Registers.write(rd, ocsr)
 				if imm ~= 0 then
 					CSRs.write(funct12, Num.bor(ocsr, imm))
 				end
 			elseif funct3 == 7 then -- CSRRCI
 				local imm = rs1
-				local ocsr = CSRs.read(funct12)
+				local ocsr = CSRs.read(funct12) or 0
 				Registers.write(rd, ocsr)
 				if imm ~= 0 then
 					CSRs.write(funct12, Num.clear(ocsr, imm))
