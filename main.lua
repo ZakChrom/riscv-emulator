@@ -38,7 +38,7 @@ Hart = {}
 Hart.pc = 0x80000000
 Hart.mode = Mode.Machine
 
-local inst_per_loop = 100
+local inst_per_loop = 200
 
 Registers.write(10, 0) -- Hart id
 Registers.write(11, 0x1000)

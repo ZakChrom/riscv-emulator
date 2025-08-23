@@ -127,6 +127,8 @@ else
 		-- 	-- at least disable echo
 		-- 	os.execute("stty -icanon -echo min 1 time 0")
 		-- end
+
+		stdin_waiting = false;
 	end
 end
 
