@@ -71,7 +71,7 @@ while true do
 
 			imm = Num.lshift(imm, 12)
 
-			Registers.write(rd, imm + Hart.pc)
+			Registers.write(rd, Num.add(imm, Hart.pc))
 		elseif opcode == 111 then -- 0b1101111, JAL
 			local rd = Num.getBits(inst, 7, 11)
 
@@ -81,10 +81,7 @@ while true do
 			local imm19_12 = Num.getBits(inst, 12,19)
 
 			local imm = imm20 * 2^20 + imm19_12 * 2^12 + imm11 * 2^11 + imm10_1 * 2^1 -- i have no fucking clue if this works :thubm_pu:
-
-			if imm20 == 1 then -- sign bit fuck
-				imm = imm - 2^21
-			end
+			imm = Num.sext(imm, 21)
 
 			Registers.write(rd, Hart.pc + 4)
 
@@ -94,10 +91,7 @@ while true do
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rs1 = Num.getBits(inst, 15, 19)
 			local imm = Num.getBits(inst, 20, 31)
-
-			if Num.getBits(imm, 11, 11) == 1 then -- sign bit
-				imm = imm - 2^12
-			end
+			imm = Num.sext(imm, 12)
 
 			local base = Registers.read(rs1)
 			local target = Num.add(base, imm)
@@ -118,7 +112,8 @@ while true do
 			local sb = Num.signed(b, 32)
 
 			local imm = b_type_imm(inst)
-			local inc = Num.signed(imm, 13)
+			local inc = Num.sext(imm, 13)
+
 			if funct3 == 0 then -- BEQ
 				if a == b then
 					Hart.pc_inc_amount = inc
@@ -149,7 +144,7 @@ while true do
 			local funct3 = Num.getBits(inst, 12, 14)
 			local rs1 = Num.getBits(inst, 15, 19)
 			local imm = Num.getBits(inst, 20, 31)
-			local addr = (Registers.read(rs1) + Num.sext(imm, 12)) % (2^32)
+			local addr = Num.add(Registers.read(rs1), Num.sext(imm, 12))
 			if funct3 == 0 then -- LB
 				local value = Memory.read(addr, 1)
 				if value then
@@ -191,7 +186,7 @@ while true do
 			local rs1 = Num.getBits(inst, 15, 19)
 			local rs2 = Num.getBits(inst, 20, 24)
 			local imm = s_type_imm(inst)
-			local addr = (Registers.read(rs1) + Num.sext(imm, 12)) % (2^32)
+			local addr = Num.add(Registers.read(rs1), Num.sext(imm, 12))
 			if funct3 == 0 then -- SB
 				local succ = Memory.write(addr, Registers.read(rs2), 1)
 				if not succ then
@@ -213,18 +208,14 @@ while true do
 			local rd = Num.getBits(inst, 7, 11)
 			local rs1 = Num.getBits(inst, 15, 19)
 			local immediate = Num.getBits(inst, 20,31)
-			local simmediate = immediate
+			local simmediate = Num.signed(immediate, 12)
+			immediate = Num.sext(immediate, 12)
 
 			local a = Registers.read(rs1)
 			local sa = Num.signed(a, 32)
 
-			if Num.getBits(immediate, 11, 11) == 1 then -- oh fuck off sign bit
-				simmediate = Num.signed(simmediate, 12)
-				immediate = Num.sext(immediate, 12)
-			end
-
 			if funct3 == 0 then -- ADDI
-				Registers.write(rd, Num.add(Registers.read(rs1), immediate))
+				Registers.write(rd, Num.add(a, immediate))
 			elseif funct3 == 2 then -- SLTI
 				Registers.write(rd, (sa < simmediate) and 1 or 0)
 			elseif funct3 == 3 then -- SLTIU
@@ -235,7 +226,6 @@ while true do
 				Registers.write(rd, Num.bor(a, immediate))
 			elseif funct3 == 7 then -- ANDI
 				Registers.write(rd, Num.band(a, immediate))
-
 			elseif funct3 == 1 then -- SLLI
 				local shift_amount = Num.getBits(inst, 20,24)
 
@@ -386,7 +376,7 @@ while true do
 					end
 				elseif funct3 == 1 then -- SLL
 					-- if funct7 == 0 then -- this if statement is probably never false so like who cares
-						Registers.write(rd, Num.lshift(Registers.read(rs1), Registers.read(rs2)))
+						Registers.write(rd, Num.lshift(Registers.read(rs1), Registers.read(rs2) % 32))
 					-- end
 				elseif funct3 == 2 then -- SLT
 					local signeda = Num.signed(Registers.read(rs1), 32)
@@ -399,7 +389,7 @@ while true do
 				elseif funct3 == 5 then -- SRL, SRA
 					if Num.getBits(inst, 30, 30) == 1 then -- SRA
 						local a = Registers.read(rs1)
-						local b = Registers.read(rs2)
+						local b = Registers.read(rs2) % 32
 						local is_signed = Num.isneg(a)
 
 						local newval = Num.rshift(a, b)
@@ -413,7 +403,7 @@ while true do
 
 						Registers.write(rd, newval)
 					else -- SRL
-						Registers.write(rd, Num.rshift(Registers.read(rs1), Registers.read(rs2)))
+						Registers.write(rd, Num.rshift(Registers.read(rs1), Registers.read(rs2) % 32))
 					end
 				elseif funct3 == 6 then -- OR
 					Registers.write(rd, Num.bor(Registers.read(rs1), Registers.read(rs2)))
@@ -651,5 +641,5 @@ while true do
 		Trap.raise(2, inst)
 	end
 
-	Hart.pc = Hart.pc + Hart.pc_inc_amount
+	Hart.pc = Num.add(Hart.pc, Hart.pc_inc_amount)
 end
