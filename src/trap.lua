@@ -7,7 +7,7 @@ function Trap.raise(trap, value)
 
 	local mstatus = assert(CSRs.read(0x300))
 	local mie = Num.getBits(mstatus, 3, 3)
-	assert(CSRs.write(0x300, Num.clear(mstatus, 6272) + (mie * 128) + (Hart.mode * 2048)))
+	assert(CSRs.write(0x300, Num.clear(mstatus, 6280) + (mie * 128) + (Hart.mode * 2048)))
 	Hart.mode = Mode.Machine
 
 	local mtvec = assert(CSRs.read(0x305))

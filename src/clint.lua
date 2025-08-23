@@ -28,8 +28,9 @@ function CLINT.update(ticks) -- set the timer value and things
 	if (CLINT.timer_hi > CLINT.cmp_hi) or
 	   (CLINT.timer_hi == CLINT.cmp_hi and CLINT.timer_lo >= CLINT.cmp_lo) then
 		
-		-- TODO: interrupt for timer
+		return true -- handled in main loop
 	end
+	return false
 end
 
 Memory.register(CLINT.start, CLINT.length, {

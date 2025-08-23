@@ -38,6 +38,8 @@ Hart = {}
 Hart.pc = 0x80000000
 Hart.mode = Mode.Machine
 
+local inst_per_loop = 100
+
 Registers.write(10, 0) -- Hart id
 Registers.write(11, 0x1000)
 
@@ -47,9 +49,25 @@ while true do
 	local now = os.clock()
 	local timediff = now - last_time
 	last_time = now
-	CLINT.update(math.floor(timediff * 10000000 + 0.5)) -- our timer is in a bullshit hz but it works
+	local timer_int = CLINT.update(math.floor(timediff * 10000000 + 0.5)) -- our timer is in a bullshit hz but it works
+
+	if timer_int then
+		CSRs[0x344].v = Num.bor(CSRs[0x344].v, 128) -- set mip for timer
+	else
+		CSRs[0x344].v = Num.clear(CSRs[0x344].v, 128) -- mip for timer
+	end
+
+	if Num.getBits(CSRs[0x300].v,3,3) == 1 then -- mstatus.MIE
+		if Num.getBits(CSRs[0x344].v, 7, 7) == 1 and Num.getBits(CSRs[0x304].v, 7, 7) == 1 then
+			-- timer interrupt :tada:
+			Trap.raise(0x80000007, 0)
+		end
+	end
 
 	UART.update()
+
+	for _ = 1,inst_per_loop do
+
 	local inst = Memory.read(Hart.pc, 4)
 	Hart.pc_inc_amount = 4
 
@@ -640,6 +658,9 @@ while true do
 		print("illegal instruction at " .. tostring(Hart.pc))
 		Trap.raise(2, inst)
 	end
-
+	
 	Hart.pc = Num.add(Hart.pc, Hart.pc_inc_amount)
+
+	
+	end
 end

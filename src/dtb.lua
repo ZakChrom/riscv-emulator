@@ -7,7 +7,7 @@ function DTB.load(filename)
 	file:close()
 end
 
-DTB.load("the2.dtb") -- need it loaded to register it into memory
+DTB.load("the.dtb") -- need it loaded to register it into memory
 
 function DTB.read(addr)
 	return DTB.dtb:byte(addr + 1, addr + 1)
