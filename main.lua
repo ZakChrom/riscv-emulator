@@ -82,7 +82,7 @@ while true do
 
 			local imm = imm20 * 2^20 + imm19_12 * 2^12 + imm11 * 2^11 + imm10_1 * 2^1 -- i have no fucking clue if this works :thubm_pu:
 
-			if imm20 == 0 then -- sign bit fuck
+			if imm20 == 1 then -- sign bit fuck
 				imm = imm - 2^21
 			end
 
