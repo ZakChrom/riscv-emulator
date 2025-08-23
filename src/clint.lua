@@ -57,10 +57,10 @@ Memory.register(CLINT.start, CLINT.length, {
 			CLINT.msip = set_byte(CLINT.msip, addr, byte)
 		elseif addr >= 0x4000 and addr <= 0x4003 then -- mtimecmp low
 			local where = addr - 0x4000
-			set_byte(CLINT.cmp_lo, where, byte)
+			CLINT.cmp_lo = set_byte(CLINT.cmp_lo, where, byte)
 		elseif addr >= 0x4004 and addr <= 0x4007 then -- mtimecmp hi
 			local where = addr - 0x4004
-			set_byte(CLINT.cmp_hi, where, byte)
+			CLINT.cmp_hi = set_byte(CLINT.cmp_hi, where, byte)
 		end
 	end,
 	validRead = function ()

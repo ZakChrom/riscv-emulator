@@ -10,7 +10,7 @@ function UART.update()
 	if stdin_waiting and stdin_waiting() then
 		local char = io.read(1)
 
-		UART.inputBuffer[#UART.inputBuffer+1] = char
+		UART.inputBuffer[#UART.inputBuffer+1] = string.byte(char)
 	end
 end
 
